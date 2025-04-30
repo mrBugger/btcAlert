@@ -1,23 +1,26 @@
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
-def is_price_dropping(symbol="BTCUSDT", hours=6):
-    url = "https://api.binance.com/api/v3/klines"
+def is_price_dropping(hours=6):
+    url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
     params = {
-        "symbol": symbol,
-        "interval": "1h",
-        "limit": hours + 1
+        "vs_currency": "usd",
+        "days": "1",              # get up to 24h of prices
+        "interval": "hourly"
     }
 
     try:
         response = requests.get(url, params=params)
-        response.raise_for_status()  # Raise error if status is not 200
-
+        response.raise_for_status()
         data = response.json()
-        if not isinstance(data, list) or len(data) < hours + 1:
-            raise ValueError("Unexpected response structure or not enough data.")
 
-        closes = [float(candle[4]) for candle in data]
+        prices = data.get("prices", [])
+        if len(prices) < hours + 1:
+            raise ValueError("Not enough hourly price data received.")
+
+        # Get only the last (hours + 1) entries
+        recent = prices[-(hours + 1):]
+        closes = [price[1] for price in recent]
 
         is_dropping = all(closes[i] < closes[i - 1] for i in range(1, len(closes)))
         start_price = closes[0]
