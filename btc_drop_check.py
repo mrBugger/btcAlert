@@ -1,16 +1,20 @@
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 
 def is_price_dropping(hours=6):
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
     params = {
         "vs_currency": "usd",
-        "days": "1",              # get up to 24h of prices
+        "days": "1",
         "interval": "hourly"
+    }
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0"
     }
 
     try:
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, headers=headers)
         response.raise_for_status()
         data = response.json()
 
@@ -18,7 +22,6 @@ def is_price_dropping(hours=6):
         if len(prices) < hours + 1:
             raise ValueError("Not enough hourly price data received.")
 
-        # Get only the last (hours + 1) entries
         recent = prices[-(hours + 1):]
         closes = [price[1] for price in recent]
 
